@@ -55,19 +55,32 @@ class UserKnowledge(UserKnowledgeBase):
         orm_mode = True
 
 class ConversationMessageBase(BaseModel):
-    user_id: str
     role: str  # 'user' or 'assistant'
-    message: str
-
-class ConversationMessageCreate(ConversationMessageBase):
-    pass
+    content: str
 
 class ConversationMessage(ConversationMessageBase):
-    id: int
     timestamp: datetime
 
     class Config:
         orm_mode = True
+
+class ConversationCreate(BaseModel):
+    user_id: str
+    conversation: List[ConversationMessageBase]
+
+class Conversation(BaseModel):
+    id: int
+    user_id: str
+    conversation: List[ConversationMessageBase]
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        orm_mode = True
+
+class ContinueConversation(BaseModel):
+    conversation_id: int
+    user_message: str
 
 class FeedbackBase(BaseModel):
     task_type: TaskType

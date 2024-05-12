@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 from sqlalchemy.orm import Session
 from . import models, schemas
@@ -45,16 +46,25 @@ def create_user_knowledge(db: Session, knowledge: schemas.UserKnowledgeCreate):
 def get_user_knowledge(db: Session, user_id: str, knowledge_type: schemas.KnowledgeType):
     return db.query(models.UserKnowledge).filter_by(user_id=user_id, type=knowledge_type).all()
 
-# CRUD for ConversationMessage
-def create_conversation_message(db: Session, message: schemas.ConversationMessageCreate):
-    db_message = models.ConversationMessage(**message.model_dump())
-    db.add(db_message)
+# CRUD for Conversation
+def create_conversation(db: Session, conversation_create: schemas.ConversationCreate):
+    conversation = models.Conversation(**conversation_create.dict())
+    db.add(conversation)
     db.commit()
-    db.refresh(db_message)
-    return db_message
+    db.refresh(conversation)
+    return conversation
 
-def get_conversation_history(db: Session, user_id: str):
-    return db.query(models.ConversationMessage).filter_by(user_id=user_id).order_by(models.ConversationMessage.timestamp).all()
+def get_conversation(db: Session, conversation_id: int):
+    return db.query(models.Conversation).filter(models.Conversation.id == conversation_id).first()
+
+def update_conversation(db: Session, conversation_id: int, conversation_update: schemas.ConversationCreate):
+    conversation = db.query(models.Conversation).filter(models.Conversation.id == conversation_id).first()
+    if conversation:
+        for key, value in conversation_update.dict().items():
+            setattr(conversation, key, value)
+        db.commit()
+        db.refresh(conversation)
+    return conversation
 
 # CRUD for PersonalizedPrompt
 def create_personalized_prompt(db: Session, prompt: schemas.PersonalizedPromptCreate):
