@@ -1,5 +1,6 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
+from typing import List
 from fastapi import FastAPI, HTTPException, Depends, Request, logger
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
@@ -11,10 +12,20 @@ from ai_service.subtasks import AutoSubtasking
 from ai_service.tagging import AutoTagging
 from ai_service.feedback import FeedbackManager
 from ai_service.models import Base as BaseAI
-from ai_service.prisma_models import Base as BasePrisma
+from ai_service.prisma_models import Base as BasePrisma, Subtask, Tag, Task
+from fastapi import FastAPI, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+from fastapi.security import OAuth2PasswordRequestForm
+from ai_service.database import get_db_ai, get_db_prisma
+from . import schemas, crud, auth, database, task_endpoints
+from sqlalchemy import or_
+from sqlalchemy.orm import joinedload
 
 
 app = FastAPI()
+
+app.include_router(auth.router)
+app.include_router(task_endpoints.router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -23,23 +34,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-def get_db_ai():
-    db = SessionLocalAI()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-def get_db_prisma():
-    db = SessionLocalPrisma()
-    try:
-        yield db
-    finally:
-        db.close()
-
 
 @app.post("/auto_tag/", response_model=schemas.AutoTagResponse)
 def auto_tag_tasks(auto_tag_request: schemas.AutoTagRequest, db_prisma: Session = Depends(get_db_prisma), db_ai: Session = Depends(get_db_ai)):
@@ -238,12 +232,11 @@ def get_tasklist(tasklist_id: int, db: Session = Depends(get_db_prisma)):
     return db_tasklist
 
 @app.delete("/tasklists/{tasklist_id}", response_model=schemas.TaskList)
-def delete_tasklist(tasklist_id: int, db: Session = Depends(get_db_prisma)):
-    db_tasklist = prisma_crud.get_tasklist(db, tasklist_id)
-    if db_tasklist is None:
-        raise HTTPException(status_code=404, detail="TaskList not found")
-    prisma_crud.delete_tasklist(db, tasklist_id)
-    return db_tasklist
+def delete_tasklist(tasklist_id: int, new_tasklist_id: int = None, db: Session = Depends(get_db_prisma)):
+    if new_tasklist_id:
+        return prisma_crud.delete_tasklist(db, tasklist_id, new_tasklist_id)
+    else:
+        return prisma_crud.delete_tasklist(db, tasklist_id)
 
 @app.put("/tasklists/{tasklist_id}", response_model=schemas.TaskList)
 def update_tasklist(tasklist_id: int, tasklist: schemas.TaskListCreate, db: Session = Depends(get_db_prisma)):
@@ -332,3 +325,4 @@ def update_subtask(subtask_id: int, subtask: schemas.SubtaskCreate, db: Session 
     if db_subtask is None:
         raise HTTPException(status_code=404, detail="Subtask not found")
     return prisma_crud.update_subtask(db, subtask_id, subtask)
+

@@ -17,3 +17,20 @@ BasePrisma = declarative_base()
 def init_ai_database():
     from .models import Base as BaseAI
     BaseAI.metadata.create_all(bind=engine_ai)
+
+
+
+def get_db_ai():
+    db = SessionLocalAI()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+def get_db_prisma():
+    db = SessionLocalPrisma()
+    try:
+        yield db
+    finally:
+        db.close()

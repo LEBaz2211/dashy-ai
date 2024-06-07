@@ -1,7 +1,24 @@
-from typing import List
+from typing import List, Optional
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from ai_service.prisma_models import Subtask, Task, Tag
 from ai_service import schemas, models
+from ai_service.prisma_models import User
+from passlib.context import CryptContext
+
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def get_user_by_email(db: Session, email: str) -> Optional[User]:
+    return db.query(User).filter(User.email == email).first()
+
+def create_user(db: Session, user: schemas.UserCreate):
+    hashed_password = pwd_context.hash(user.password)
+    db_user = User(email=user.email, password=hashed_password, name=user.name)
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
 
 # Fetch tasks based on their IDs
 def get_tasks_for_tagging(db: Session, task_ids: List[int]):
@@ -117,8 +134,27 @@ def get_tasklist(db: Session, tasklist_id: int):
 
 def delete_tasklist(db: Session, tasklist_id: int):
     db_tasklist = db.query(TaskList).filter(TaskList.id == tasklist_id).first()
+    
+    if not db_tasklist:
+        raise HTTPException(status_code=404, detail="TaskList not found")
+
+    # Fetch all tasks associated with the task list
+    tasks = db.query(Task).filter(Task.taskListId == tasklist_id).all()
+    
+    # Delete each task associated with the task list
+    for task in tasks:
+        db.delete(task)
+    
+    # Commit the deletions
+    db.commit()
+
+    # Now delete the task list itself
     db.delete(db_tasklist)
     db.commit()
+
+    return db_tasklist
+
+
 
 def update_tasklist(db: Session, tasklist_id: int, tasklist: schemas.TaskListCreate):
     db_tasklist = db.query(TaskList).filter(TaskList.id == tasklist_id).first()
@@ -203,3 +239,84 @@ def update_subtask(db: Session, subtask_id: int, subtask: schemas.SubtaskCreate)
         db.commit()
         db.refresh(db_subtask)
     return db_subtask
+
+
+# Feedback CRUD operations
+def create_feedback(db: Session, feedback: schemas.FeedbackCreate):
+    db_feedback = Feedback(**feedback.dict())
+    db.add(db_feedback)
+    db.commit()
+    db.refresh(db_feedback)
+    return db_feedback
+
+# Fetch tasks based on their IDs
+def get_task(db: Session, task_id: int):
+    return db.query(Task).filter(Task.id == task_id).first()
+
+def update_task(db: Session, task_id: int, task_update: schemas.TaskUpdate):
+    db_task = db.query(Task).filter(Task.id == task_id).first()
+    if db_task:
+        for key, value in task_update.dict().items():
+            setattr(db_task, key, value)
+        db.commit()
+        db.refresh(db_task)
+    return db_task
+
+def delete_task(db: Session, task_id: int):
+    db_task = db.query(Task).filter(Task.id == task_id).first()
+    if db_task:
+        db.delete(db_task)
+        db.commit()
+    return db_task
+
+# Subtask CRUD operations
+def create_subtask(db: Session, subtask: schemas.SubtaskCreate):
+    db_subtask = Subtask(**subtask.dict())
+    db.add(db_subtask)
+    db.commit()
+    db.refresh(db_subtask)
+    return db_subtask
+
+def update_subtask(db: Session, subtask_id: int, subtask_update: schemas.SubtaskUpdate):
+    db_subtask = db.query(Subtask).filter(Subtask.id == subtask_id).first()
+    if db_subtask:
+        for key, value in subtask_update.dict().items():
+            setattr(db_subtask, key, value)
+        db.commit()
+        db.refresh(db_subtask)
+    return db_subtask
+
+# Tag CRUD operations
+def create_tag(db: Session, tag: schemas.TagCreate):
+    db_tag = Tag(**tag.dict())
+    db.add(db_tag)
+    db.commit()
+    db.refresh(db_tag)
+    return db_tag
+
+def delete_tag(db: Session, tag_id: int):
+    db_tag = db.query(Tag).filter(Tag.id == tag_id).first()
+    if db_tag:
+        db.delete(db_tag)
+        db.commit()
+    return db_tag
+
+# AI Task CRUD operations
+def get_ai_tasks_by_task_id(db: Session, task_id: int):
+    return db.query(AITask).filter(AITask.related_task_id.contains(str(task_id))).all()
+
+def search_tasks(db: Session, search_params: schemas.TaskSearch):
+    query = db.query(Task)
+
+    if search_params.title:
+        query = query.filter(Task.title.contains(search_params.title))
+    if search_params.tag:
+        query = query.join(Task.tags).filter(Tag.name == search_params.tag)
+    if search_params.due_date_from:
+        query = query.filter(Task.dueDate >= search_params.due_date_from)
+    if search_params.due_date_to:
+        query = query.filter(Task.dueDate <= search_params.due_date_to)
+    if search_params.completed is not None:
+        query = query.filter(Task.completed == search_params.completed)
+
+    return query.all()

@@ -181,6 +181,7 @@ class Dashboard(DashboardBase):
     class Config:
         orm_mode = True
 
+
 class TaskListBase(BaseModel):
     title: str
     dashboardId: int
@@ -240,3 +241,75 @@ class Tag(TagBase):
     class Config:
         orm_mode = True
 
+class FeedbackCreate(BaseModel):
+    task_type: str
+    ai_task_id: int
+    feedback: str
+    rating: int
+
+class Feedback(BaseModel):
+    id: int
+    task_type: str
+    ai_task_id: int
+    feedback: str
+    rating: int
+    timestamp: datetime
+
+    class Config:
+        orm_mode = True
+
+class TaskUpdate(BaseModel):
+    title: Optional[str] = None
+    dueDate: Optional[datetime] = None
+    reminder: Optional[datetime] = None
+    notes: Optional[str] = None
+
+class SubtaskCreate(BaseModel):
+    title: str
+    completed: Optional[bool] = False
+    taskId: int
+
+class SubtaskUpdate(BaseModel):
+    title: Optional[str] = None
+    completed: Optional[bool] = False
+
+class TagCreate(BaseModel):
+    name: str
+
+class Tag(BaseModel):
+    id: int
+    name: str
+
+    class Config:
+        orm_mode = True
+
+class Task(BaseModel):
+    id: int
+    title: str
+    completed: bool
+    dueDate: Optional[datetime]
+    reminder: Optional[datetime]
+    notes: Optional[str]
+    tags: List[Tag]
+    subtasks: List[Subtask]
+
+    class Config:
+        orm_mode = True
+
+class AITask(BaseModel):
+    id: int
+    task_type: str
+    related_task_id: str
+    user_id: str
+    ai_output: str
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
+
+class TaskSearch(BaseModel):
+    title: Optional[str] = None
+    tag: Optional[str] = None
+    due_date_from: Optional[datetime] = None
+    due_date_to: Optional[datetime] = None
+    completed: Optional[bool] = None
