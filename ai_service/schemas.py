@@ -1,4 +1,5 @@
 from typing import List, Optional
+from fastapi import UploadFile
 from pydantic import BaseModel
 from datetime import datetime
 import enum
@@ -307,9 +308,39 @@ class AITask(BaseModel):
     class Config:
         orm_mode = True
 
-class TaskSearch(BaseModel):
+class TaskSearchWithUser(BaseModel):
+    user_id: str
     title: Optional[str] = None
-    tag: Optional[str] = None
-    due_date_from: Optional[datetime] = None
-    due_date_to: Optional[datetime] = None
     completed: Optional[bool] = None
+    tag: Optional[str] = None
+
+class TaskWithDetails(BaseModel):
+    id: int
+    title: str
+    completed: bool
+    taskListId: int
+    dueDate: Optional[datetime] = None
+    reminder: Optional[datetime] = None
+    notes: Optional[str] = None
+    task_list_title: str
+    dashboard_title: str
+    tags: List[str] = []
+    subtasks: List[str] = []
+
+    class Config:
+        from_attributes = True
+
+
+
+class UserCreateWithImage(BaseModel):
+    name: Optional[str]
+    email: str
+    password: Optional[str] = None
+    image: Optional[UploadFile] = None
+
+class UserUpdateWithImage(BaseModel):
+    name: Optional[str]
+    email: Optional[str]
+    password: Optional[str] = None
+    image: Optional[UploadFile] = None
+

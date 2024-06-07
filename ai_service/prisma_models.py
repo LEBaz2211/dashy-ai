@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, Boolean, DateTime, Enum, ForeignKey, Table, func
+from sqlalchemy import Column, LargeBinary, String, Integer, Boolean, DateTime, Enum, ForeignKey, Table, func
 from sqlalchemy.orm import relationship
 from ai_service.database import BasePrisma as Base
 import enum
@@ -21,7 +21,7 @@ class User(Base):
     name = Column(String(255), nullable=True)
     email = Column(String(255), unique=True, nullable=False)
     password = Column(String(255), nullable=True)
-    image = Column(String(255), nullable=True)
+    image = Column(LargeBinary, nullable=True)
     emailVerified = Column(DateTime, nullable=True)
     dashboards = relationship("Dashboard", back_populates="user")
     accounts = relationship("Account", back_populates="user")

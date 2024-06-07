@@ -56,7 +56,9 @@ async def delete_tag(task_id: int, tag_id: int, db: Session = Depends(database.g
 async def get_ai_tasks_for_task(task_id: int, db: Session = Depends(database.get_db_ai)):
     return prisma_crud.get_ai_tasks_by_task_id(db, task_id)
 
-@router.post("/search/tasks", response_model=List[schemas.Task])
-async def search_tasks(search_params: schemas.TaskSearch, db: Session = Depends(database.get_db_prisma)):
-    tasks = prisma_crud.search_tasks(db, search_params)
+@router.post("/search/tasks", response_model=List[schemas.TaskWithDetails])
+async def search_tasks(search_params: schemas.TaskSearchWithUser, db: Session = Depends(database.get_db_prisma)):
+    tasks = prisma_crud.search_tasks_with_user(db, search_params)
     return tasks
+
+

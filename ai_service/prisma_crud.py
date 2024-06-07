@@ -1,7 +1,8 @@
 from typing import List, Optional
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
-from ai_service.prisma_models import Subtask, Task, Tag
+from ai_service import prisma_models
+from ai_service.prisma_models import Dashboard, Subtask, Task, Tag
 from ai_service import schemas, models
 from ai_service.prisma_models import User
 from passlib.context import CryptContext
@@ -12,13 +13,45 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 def get_user_by_email(db: Session, email: str) -> Optional[User]:
     return db.query(User).filter(User.email == email).first()
 
-def create_user(db: Session, user: schemas.UserCreate):
-    hashed_password = pwd_context.hash(user.password)
-    db_user = User(email=user.email, password=hashed_password, name=user.name)
+def create_user(db: Session, user: schemas.UserCreateWithImage):
+    db_user = prisma_models.User(
+        name=user.name,
+        email=user.email,
+        password=user.password,
+        image=user.image.file.read() if user.image else None
+    )
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
     return db_user
+
+
+def update_user(db: Session, user_id: str, user: schemas.UserUpdateWithImage):
+    db_user = db.query(prisma_models.User).filter(prisma_models.User.id == user_id).first()
+    if db_user:
+        if user.name is not None:
+            db_user.name = user.name
+        if user.email is not None:
+            db_user.email = user.email
+        if user.password is not None:
+            db_user.password = user.password
+        if user.image is not None:
+            db_user.image = user.image.file.read()
+        db.commit()
+        db.refresh(db_user)
+    return db_user
+
+def get_user_image(db: Session, user_id: str):
+    return db.query(prisma_models.User).filter(prisma_models.User.id == user_id).first().image
+
+def delete_user_image(db: Session, user_id: str):
+    user = db.query(prisma_models.User).filter(prisma_models.User.id == user_id).first()
+    if user:
+        user.image = None
+        db.commit()
+        db.refresh(user)
+    return user
+
 
 # Fetch tasks based on their IDs
 def get_tasks_for_tagging(db: Session, task_ids: List[int]):
@@ -67,17 +100,7 @@ def update_task_subtasks(db: Session, task_id: int, subtask_titles: List[str]):
     db.commit()  # Commit changes to the database
     return task  # Return the task with updated subtasks
 
-from typing import List
-from sqlalchemy.orm import Session
-from ai_service.prisma_models import User, Dashboard, TaskList, Task, Tag, Subtask
 
-# User CRUD operations
-def create_user(db: Session, user: schemas.UserCreate):
-    db_user = User(**user.dict())
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
-    return db_user
 
 def get_user(db: Session, user_id: str):
     return db.query(User).filter(User.id == user_id).first()
@@ -86,15 +109,6 @@ def delete_user(db: Session, user_id: str):
     db_user = db.query(User).filter(User.id == user_id).first()
     db.delete(db_user)
     db.commit()
-
-def update_user(db: Session, user_id: str, user: schemas.UserCreate):
-    db_user = db.query(User).filter(User.id == user_id).first()
-    if db_user:
-        for key, value in user.dict().items():
-            setattr(db_user, key, value)
-        db.commit()
-        db.refresh(db_user)
-    return db_user
 
 # Dashboard CRUD operations
 def create_dashboard(db: Session, dashboard: schemas.DashboardCreate):
@@ -301,22 +315,28 @@ def delete_tag(db: Session, tag_id: int):
         db.commit()
     return db_tag
 
-# AI Task CRUD operations
-def get_ai_tasks_by_task_id(db: Session, task_id: int):
-    return db.query(models.AITask).filter(models.AITask.related_task_id.contains(str(task_id))).all()
-
-def search_tasks(db: Session, search_params: schemas.TaskSearch):
-    query = db.query(Task)
+def search_tasks_with_user(db: Session, search_params: schemas.TaskSearchWithUser):
+    query = db.query(Task, TaskList, Dashboard) \
+              .join(Task.taskList) \
+              .join(TaskList.dashboard) \
+              .filter(Dashboard.userId == search_params.user_id)
 
     if search_params.title:
         query = query.filter(Task.title.contains(search_params.title))
     if search_params.tag:
         query = query.join(Task.tags).filter(Tag.name == search_params.tag)
-    if search_params.due_date_from:
-        query = query.filter(Task.dueDate >= search_params.due_date_from)
-    if search_params.due_date_to:
-        query = query.filter(Task.dueDate <= search_params.due_date_to)
     if search_params.completed is not None:
         query = query.filter(Task.completed == search_params.completed)
 
-    return query.all()
+    results = query.all()
+
+    tasks = []
+    for task, task_list, dashboard in results:
+        task_data = task.__dict__
+        task_data["task_list_title"] = task_list.title
+        task_data["dashboard_title"] = dashboard.title
+        tasks.append(task_data)
+
+    return tasks
+
+
