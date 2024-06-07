@@ -1,5 +1,6 @@
 from datetime import datetime
 import json
+from typing import List
 from sqlalchemy.orm import Session
 from . import models, schemas
 
@@ -19,9 +20,6 @@ def get_ai_task(db: Session, ai_task_id: int):
 
 def get_ai_tasks_by_user(db: Session, user_id: str):
     return db.query(models.AITask).filter(models.AITask.user_id == user_id).all()
-
-from sqlalchemy.orm import Session
-from . import models, schemas
 
 # CRUD for Feedback (Updated)
 def create_feedback(db: Session, feedback: schemas.FeedbackCreate):
@@ -76,3 +74,4 @@ def create_personalized_prompt(db: Session, prompt: schemas.PersonalizedPromptCr
 
 def get_personalized_prompts(db: Session, user_id: str):
     return db.query(models.PersonalizedPrompt).filter_by(user_id=user_id).order_by(models.PersonalizedPrompt.timestamp).all()
+

@@ -8,7 +8,6 @@ SessionLocalAI = sessionmaker(autocommit=False, autoflush=False, bind=engine_ai)
 BaseAI = declarative_base()
 
 
-# Prisma Database
 SQLALCHEMY_PRISMA_DATABASE_URL = "mysql+pymysql://nextjs_user:Agepi85183@localhost:3306/nextjs_auth_db"
 engine_prisma = create_engine(SQLALCHEMY_PRISMA_DATABASE_URL)
 SessionLocalPrisma = sessionmaker(autocommit=False, autoflush=False, bind=engine_prisma)

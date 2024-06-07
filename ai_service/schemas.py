@@ -137,3 +137,106 @@ class AutoTagRequest(BaseModel):
 class AutoTagResponse(BaseModel):
     updated_tasks: List[TaskTagUpdate]
     ai_task_id: int
+
+class AutoSubtaskRequest(BaseModel):
+    tasks: List[int]
+    user_id: str
+
+class SubtaskUpdate(BaseModel):
+    task_id: int
+    subtasks: List[str]
+
+class AutoSubtaskResponse(BaseModel):
+    updated_tasks: List[SubtaskUpdate]
+    ai_task_id: int
+
+# Schemas for prisma_database
+class UserBase(BaseModel):
+    name: Optional[str]
+    email: str
+
+class UserCreate(UserBase):
+    password: Optional[str] = None
+    image: Optional[str] = None
+    emailVerified: Optional[datetime] = None
+
+class User(UserBase):
+    id: str
+    dashboards: List['Dashboard'] = []
+
+    class Config:
+        orm_mode = True
+
+class DashboardBase(BaseModel):
+    title: str
+    userId: str
+
+class DashboardCreate(DashboardBase):
+    pass
+
+class Dashboard(DashboardBase):
+    id: int
+    taskLists: List['TaskList'] = []
+
+    class Config:
+        orm_mode = True
+
+class TaskListBase(BaseModel):
+    title: str
+    dashboardId: int
+
+class TaskListCreate(TaskListBase):
+    pass
+
+class TaskList(TaskListBase):
+    id: int
+    tasks: List['Task'] = []
+
+    class Config:
+        orm_mode = True
+
+class TaskBase(BaseModel):
+    title: str
+    completed: Optional[bool] = False
+    taskListId: int
+    dueDate: Optional[datetime] = None
+    reminder: Optional[datetime] = None
+    notes: Optional[str] = None
+
+class TaskCreate(TaskBase):
+    pass
+
+class Task(TaskBase):
+    id: int
+    tags: List['Tag'] = []
+    subtasks: List['Subtask'] = []
+
+    class Config:
+        orm_mode = True
+
+class SubtaskBase(BaseModel):
+    title: str
+    completed: Optional[bool] = False
+    taskId: int
+
+class SubtaskCreate(SubtaskBase):
+    pass
+
+class Subtask(SubtaskBase):
+    id: int
+
+    class Config:
+        orm_mode = True
+
+class TagBase(BaseModel):
+    name: str
+
+class TagCreate(TagBase):
+    pass
+
+class Tag(TagBase):
+    id: int
+
+    class Config:
+        orm_mode = True
+

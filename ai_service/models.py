@@ -26,7 +26,7 @@ class AITask(Base):
     __tablename__ = 'aitask'
     id = Column(Integer, primary_key=True, index=True)
     task_type = Column(Enum(TaskType), nullable=False)
-    related_task_id = Column(String(255), nullable=True)   # Foreign key to task table if applicable
+    related_task_id = Column(String(255), nullable=True)
     user_id = Column(String(255), index=True)
     ai_output = Column(Text, nullable=False)
     created_at = Column(DateTime, default=func.now())
@@ -44,18 +44,18 @@ class Conversation(Base):
     __tablename__ = 'conversation'
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(String(255), index=True)
-    conversation = Column(JSON, nullable=False)  # Store the conversation as a JSON object
+    conversation = Column(JSON, nullable=False)
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
 class Feedback(Base):
     __tablename__ = 'feedback'
     id = Column(Integer, primary_key=True, index=True)
-    task_type = Column(String(50), nullable=False)  # Add this line
-    ai_task_id = Column(Integer, ForeignKey('aitask.id'), nullable=True)  # Now optional
+    task_type = Column(String(50), nullable=False)
+    ai_task_id = Column(Integer, ForeignKey('aitask.id'), nullable=True)
     user_id = Column(String(255), index=True)
     feedback = Column(Text, nullable=False)
-    rating = Column(Integer, nullable=True)  # Optional rating (1-5)
+    rating = Column(Integer, nullable=True)
     timestamp = Column(DateTime, default=func.now())
     aitask = relationship('AITask', back_populates='feedback', uselist=False)
 

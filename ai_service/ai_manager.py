@@ -4,15 +4,23 @@ from sqlalchemy.orm import Session
 from datetime import datetime
 from . import crud, schemas
 
-# Initialize LLM Client
-def query_llm(messages, model="MaziyarPanahi/Llama-3-8B-Instruct-32k-v0.1-GGUF"):
-    client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
+def query_llm(messages, model="llama3-70b-8192"):
+    client = OpenAI(base_url="https://api.groq.com/openai/v1", api_key="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")
     completion = client.chat.completions.create(
         model=model,
         messages=messages,
         temperature=0.7
     )
     return completion.choices[0].message.content
+
+# def query_llm(messages, model="MaziyarPanahi/Llama-3-8B-Instruct-32k-v0.1-GGUF"):
+#     client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
+#     completion = client.chat.completions.create(
+#         model=model,
+#         messages=messages,
+#         temperature=0.7
+#     )
+#     return completion.choices[0].message.content
 
 # Clean and parse JSON
 def clean_and_parse_json(json_string):
@@ -82,6 +90,7 @@ class ConversationManager:
         self.user_id = user_id
         self.model = "MaziyarPanahi/Llama-3-8B-Instruct-32k-v0.1-GGUF"
         # self.model = "int2eh/llama-3-8B-Instruct-function-calling-v0.2-Q6_K-GGUF"
+        self.model = "llama3-70b-8192"
         self.function_schemas = {
             "store_knowledge": {
                 "name": "store_knowledge",
@@ -91,13 +100,14 @@ class ConversationManager:
                 Bad Examples: 
                 - store_knowledge("The assistant is running on a server.")
                 - store_knowledge("SEO is the process of optimizing your online content so that a search engine likes to show it as a top result for searches of a certain keyword.")
-                Good Example: store_knowledge("The user is working on a new project around AI and ML")
+                Good Example: 
+                - store_knowledge("The user is working on a new project around AI and ML")
                 """,
                 "parameters": {
                     "type": "object",
                     "properties": {
-                        "type": {"type": "string", "description": "Knowledge type, e.g. project, object, etc."},
-                        "content": {"type": "string", "description": "Content of the knowledge."},
+                        "type": {"type": "personal", "description": "The user's name is John Doe."},
+                        "content": {"type": "project", "description": "The user is working on a new project around AI and ML"},
                     },
                     "required": ["type", "content"]
                 }
@@ -118,9 +128,22 @@ class ConversationManager:
         ]
         """
         function_list = json.dumps(list(self.function_schemas.values()), indent=2)
-        return f"""You are an AI assistant who has access to function calls. You generally simply have a conversation with the user,
-          but sometimes you need to perform a function call. Here are the available functions you can call:
+        return f"""
+        You are an AI assistant who has function calls. You generally simply have a conversation with the user, but sometimes you need to perform a function call.
+        If you want to perform a function call, your output should be in JSON format and JSON only, no other words.
+        The user may ask various questions which can be answered by calling the following function:
         {function_list}
+
+        Example JSON output:
+        {example_JSON_output}
+
+        You basically have two ways to respond, but if you do one, you cannot do the other in the same response:
+        1. If you want to perform a function call, output the JSON-formatted function call.
+        2. If you want to continue the conversation, output the response as a normal message.
+        If you made a function call in your previous response, you MUST ALWAYS continue the conversation. DO NOT PERFORM ANY FUNCTION CALLS TWICE IN A ROW, You must talk between.
+        You must not always perform a function call. For example, if the user asks a question, you should answer it directly, without performing a function call, but if the user
+        talks aout himself, a project, an object, etc., you should store that knowledge.
+        NEVER MAKE A FUNCTION CALL WHEN THE USER ASKS A QUESTION. ONLY MAKE FUNCTION CALLS WHEN THE USER TALKS ABOUT HIMSELF, A PROJECT, AN OBJECT, ETC.
         """
 
     def query_llm_for_conversation(self, messages):
@@ -163,7 +186,7 @@ class ConversationManager:
             messages.append(ai_message)
         else:
             function_results = []
-            messages.append({"role": "assistant", "content": "ai_response"})
+            messages.append({"role": "assistant", "content": ai_response})
             for function_call in function_calls:
                 function_name = function_call.pop("name")
                 if function_name == "store_knowledge":
@@ -186,7 +209,7 @@ class ConversationManager:
         return conversation_data
 
     def continue_conversation(self, existing_messages, user_message):
-        user_message = {"role": "user", "content": user_message, "timestamp": str(datetime.utcnow())}
+        user_message = {"role": "user", "content": user_message}
         messages = existing_messages + [user_message]
 
         function_calls, ai_response = self.query_llm_for_conversation(messages)
@@ -197,6 +220,7 @@ class ConversationManager:
             return messages
         else:
             function_results = []
+            messages.append({"role": "assistant", "content": ai_response})
             for function_call in function_calls:
                 function_name = function_call.pop("name")
                 if function_name == "store_knowledge":
@@ -249,20 +273,36 @@ Return only the corrected JSON, without any extra explanations.
     raise ValueError(f"Failed to correct JSON after {max_retries} attempts.")
 
 
-    old_system_prompt = """
-        You are an AI assistant who has function calls. You generally simply have a conversation with the user, but sometimes you need to perform a function call.
-        If you want to perform a function call, your output should be in JSON format and JSON only, no other words.
-        The user may ask various questions which can be answered by calling the following function:
-        {function_list}
+def correct_auto_subtask_json_parsing(malformed_json, max_retries=3):
+    correction_prompt = f"""
+The assistant has responded with a malformed JSON. The malformed JSON string is given below:{malformed_json}
+Your task is to return a corrected and well-formatted JSON that matches the intended structure:
 
-        Example JSON output:
-        {example_JSON_output}
+1. Ensure that it is a valid JSON array.
+2. Each element should have the following structure:
+  - `id` (int): the id of the task.
+  - `tags` (list of strings).
 
-        You basically have two ways to respond, but if you do one, you cannot do the other in the same response:
-        1. If you want to perform a function call, output the JSON-formatted function call.
-        2. If you want to continue the conversation, output the response as a normal message.
-        If you made a function call in your previous response, you MUST ALWAYS continue the conversation. DO NOT PERFORM ANY FUNCTION CALLS TWICE IN A ROW, You must talk between.
-        You must not always perform a function call. For example, if the user asks a question, you should answer it directly, without performing a function call, but if the user
-        talks aout himself, a project, an object, etc., you should store that knowledge.
-        NEVER MAKE A FUNCTION CALL WHEN THE USER ASKS A QUESTION. ONLY MAKE FUNCTION CALLS WHEN THE USER TALKS ABOUT HIMSELF, A PROJECT, AN OBJECT, ETC.
-        """
+Return only the corrected JSON, without any extra explanations.
+"""
+
+    messages = [
+        {"role": "system", "content": """You are an expert in correcting JSON parsing errors. Return only the corrected JSON, without any extra explanations.
+         Always output in this example format:
+            [
+                {"id": 1, "subtasks": ["Setup project", "Install dependencies"]},
+                {"id": 2, "subtasks": ["Create wireframes", "Design logo"]}
+            ]
+         """},
+        {"role": "user", "content": correction_prompt}
+    ]
+
+    retries = 0
+    while retries < max_retries:
+        corrected_response = query_llm(messages, model="MaziyarPanahi/Llama-3-8B-Instruct-32k-v0.1-GGUF")
+        try:
+            return clean_and_parse_json(corrected_response)
+        except ValueError as e:
+            print(f"Correction attempt {retries + 1} failed: {e}")
+            retries += 1
+    raise ValueError(f"Failed to correct JSON after {max_retries} attempts.")
