@@ -303,7 +303,7 @@ def delete_tag(db: Session, tag_id: int):
 
 # AI Task CRUD operations
 def get_ai_tasks_by_task_id(db: Session, task_id: int):
-    return db.query(AITask).filter(AITask.related_task_id.contains(str(task_id))).all()
+    return db.query(models.AITask).filter(models.AITask.related_task_id.contains(str(task_id))).all()
 
 def search_tasks(db: Session, search_params: schemas.TaskSearch):
     query = db.query(Task)
