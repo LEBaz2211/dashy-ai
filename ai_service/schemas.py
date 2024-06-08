@@ -330,8 +330,6 @@ class TaskWithDetails(BaseModel):
     class Config:
         from_attributes = True
 
-
-
 class UserCreateWithImage(BaseModel):
     name: Optional[str]
     email: str
@@ -343,4 +341,8 @@ class UserUpdateWithImage(BaseModel):
     email: Optional[str]
     password: Optional[str] = None
     image: Optional[UploadFile] = None
+
+class TagUpdate(BaseModel):
+    task_id: int
+    tags: List[str]
 

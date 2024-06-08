@@ -2,7 +2,7 @@ from typing import List, Optional
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from ai_service import prisma_models
-from ai_service.prisma_models import Dashboard, Subtask, Task, Tag
+from ai_service.prisma_models import Dashboard, Subtask, Task, Tag, TaskList
 from ai_service import schemas, models
 from ai_service.prisma_models import User
 from passlib.context import CryptContext
@@ -195,22 +195,55 @@ def delete_task(db: Session, task_id: int):
     db.delete(db_task)
     db.commit()
 
-def update_task(db: Session, task_id: int, task: schemas.TaskCreate):
+def update_task(db: Session, task_id: int, task_data: schemas.TaskUpdate):
     db_task = db.query(Task).filter(Task.id == task_id).first()
-    if db_task:
-        for key, value in task.dict().items():
-            setattr(db_task, key, value)
-        db.commit()
-        db.refresh(db_task)
+    if not db_task:
+        raise ValueError(f"No task found with ID {task_id}")
+
+    # Only update the fields if they are provided in the request
+    if task_data.title is not None:
+        db_task.title = task_data.title
+    if task_data.dueDate is not None:
+        db_task.dueDate = task_data.dueDate
+    if task_data.reminder is not None:
+        db_task.reminder = task_data.reminder
+    if task_data.notes is not None:
+        db_task.notes = task_data.notes
+
+    db.commit()
+    db.refresh(db_task)
     return db_task
+
 
 # Tag CRUD operations
 def create_tag(db: Session, tag: schemas.TagCreate):
     db_tag = Tag(**tag.dict())
+    # check if tag already exists
+    existing_tag = db.query(Tag).filter(Tag.name == tag.name).first()
+    if existing_tag:
+        # use that tag
+        db_tag = existing_tag
     db.add(db_tag)
     db.commit()
     db.refresh(db_tag)
     return db_tag
+
+def update_tag_to_task(db: Session, task_id: int, tag_name: str):
+    task = db.query(Task).filter(Task.id == task_id).first()
+    if not task:
+        raise ValueError(f"No task found with ID {task_id}")
+
+    tag = db.query(Tag).filter(Tag.name == tag_name).first()
+    if not tag:
+        tag = Tag(name=tag_name)
+        db.add(tag)
+        db.commit()
+        db.refresh(tag)
+
+    task.tags.append(tag)
+    db.commit()
+    db.refresh(task)
+    return task
 
 def get_tag(db: Session, tag_id: int):
     return db.query(Tag).filter(Tag.id == tag_id).first()
@@ -257,7 +290,7 @@ def update_subtask(db: Session, subtask_id: int, subtask: schemas.SubtaskCreate)
 
 # Feedback CRUD operations
 def create_feedback(db: Session, feedback: schemas.FeedbackCreate):
-    db_feedback = Feedback(**feedback.dict())
+    db_feedback = models.Feedback(**feedback.dict())
     db.add(db_feedback)
     db.commit()
     db.refresh(db_feedback)
@@ -266,15 +299,6 @@ def create_feedback(db: Session, feedback: schemas.FeedbackCreate):
 # Fetch tasks based on their IDs
 def get_task(db: Session, task_id: int):
     return db.query(Task).filter(Task.id == task_id).first()
-
-def update_task(db: Session, task_id: int, task_update: schemas.TaskUpdate):
-    db_task = db.query(Task).filter(Task.id == task_id).first()
-    if db_task:
-        for key, value in task_update.dict().items():
-            setattr(db_task, key, value)
-        db.commit()
-        db.refresh(db_task)
-    return db_task
 
 def delete_task(db: Session, task_id: int):
     db_task = db.query(Task).filter(Task.id == task_id).first()
@@ -340,3 +364,48 @@ def search_tasks_with_user(db: Session, search_params: schemas.TaskSearchWithUse
     return tasks
 
 
+# Fetch a tag by name
+def get_tag_by_name(db: Session, name: str):
+    return db.query(Tag).filter(Tag.name == name).first()
+
+# Add a tag to a task
+def add_tag_to_task(db: Session, task_id: int, tag_name: str):
+    task = db.query(Task).filter(Task.id == task_id).first()
+    if not task:
+        raise ValueError(f"No task found with ID {task_id}")
+
+    tag = get_tag_by_name(db, tag_name)
+    if not tag:
+        tag = Tag(name=tag_name)
+        db.add(tag)
+        db.commit()
+        db.refresh(tag)
+
+    if tag not in task.tags:
+        task.tags.append(tag)
+        db.commit()
+        db.refresh(task)
+
+    return task
+
+# Remove a tag from a task and delete the tag if it's not associated with other tasks
+def remove_tag_from_task(db: Session, task_id: int, tag_id: int):
+    task = db.query(Task).filter(Task.id == task_id).first()
+    if not task:
+        raise ValueError(f"No task found with ID {task_id}")
+
+    tag = db.query(Tag).filter(Tag.id == tag_id).first()
+    if not tag:
+        raise ValueError(f"No tag found with ID {tag_id}")
+
+    if tag in task.tags:
+        task.tags.remove(tag)
+        db.commit()
+
+    # Check if the tag is associated with any other tasks
+    other_tasks = db.query(Task).filter(Task.tags.any(Tag.id == tag_id)).all()
+    if not other_tasks:
+        db.delete(tag)
+        db.commit()
+
+    return task
