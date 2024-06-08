@@ -21,6 +21,9 @@ def get_ai_task(db: Session, ai_task_id: int):
 def get_ai_tasks_by_user(db: Session, user_id: str):
     return db.query(models.AITask).filter(models.AITask.user_id == user_id).all()
 
+def get_ai_tasks_by_task_id(db: Session, task_id: int):
+    return db.query(models.AITask).filter(models.AITask.related_task_id.contains([task_id])).all()
+
 # CRUD for Feedback (Updated)
 def create_feedback(db: Session, feedback: schemas.FeedbackCreate):
     db_feedback = models.Feedback(**feedback.dict())
