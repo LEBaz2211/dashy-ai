@@ -277,31 +277,31 @@ def update_tasklist(tasklist_id: int, tasklist: schemas.TaskListCreate, db: Sess
     return prisma_crud.update_tasklist(db, tasklist_id, tasklist)
 
 # Task Endpoints
-@app.post("/tasks/", response_model=schemas.Task)
-def create_task(task: schemas.TaskCreate, db: Session = Depends(get_db_prisma)):
-    return prisma_crud.create_task(db, task)
+# @app.post("/tasks/", response_model=schemas.Task)
+# def create_task(task: schemas.TaskCreate, db: Session = Depends(get_db_prisma)):
+#     return prisma_crud.create_task(db, task)
 
-@app.get("/tasks/{task_id}", response_model=schemas.Task)
-def get_task(task_id: int, db: Session = Depends(get_db_prisma)):
-    db_task = prisma_crud.get_task(db, task_id)
-    if db_task is None:
-        raise HTTPException(status_code=404, detail="Task not found")
-    return db_task
+# @app.get("/tasks/{task_id}", response_model=schemas.Task)
+# def get_task(task_id: int, db: Session = Depends(get_db_prisma)):
+#     db_task = prisma_crud.get_task(db, task_id)
+#     if db_task is None:
+#         raise HTTPException(status_code=404, detail="Task not found")
+#     return db_task
 
-@app.delete("/tasks/{task_id}", response_model=schemas.Task)
-def delete_task(task_id: int, db: Session = Depends(get_db_prisma)):
-    db_task = prisma_crud.get_task(db, task_id)
-    if db_task is None:
-        raise HTTPException(status_code=404, detail="Task not found")
-    prisma_crud.delete_task(db, task_id)
-    return db_task
+# @app.delete("/tasks/{task_id}", response_model=schemas.Task)
+# def delete_task(task_id: int, db: Session = Depends(get_db_prisma)):
+#     db_task = prisma_crud.get_task(db, task_id)
+#     if db_task is None:
+#         raise HTTPException(status_code=404, detail="Task not found")
+#     prisma_crud.delete_task(db, task_id)
+#     return db_task
 
-@app.put("/tasks/{task_id}", response_model=schemas.Task)
-def update_task(task_id: int, task: schemas.TaskCreate, db: Session = Depends(get_db_prisma)):
-    db_task = prisma_crud.get_task(db, task_id)
-    if db_task is None:
-        raise HTTPException(status_code=404, detail="Task not found")
-    return prisma_crud.update_task(db, task_id, task)
+# @app.put("/tasks/{task_id}", response_model=schemas.Task)
+# def update_task(task_id: int, task: schemas.TaskCreate, db: Session = Depends(get_db_prisma)):
+#     db_task = prisma_crud.get_task(db, task_id)
+#     if db_task is None:
+#         raise HTTPException(status_code=404, detail="Task not found")
+#     return prisma_crud.update_task(db, task_id, task)
 
 # Tag Endpoints
 @app.post("/tags/", response_model=schemas.Tag)
