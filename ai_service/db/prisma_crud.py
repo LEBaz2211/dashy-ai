@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from ai_service.db import prisma_models
 from ai_service.db import models
 from ai_service.db.prisma_models import Dashboard, Subtask, Task, Tag, TaskList
-from ai_service.db import schemas
+from ai_service.db.schemas import TaskCreate, TaskUpdate, TaskSearchWithUser, UserCreateWithImage, UserUpdateWithImage, DashboardCreate, TagCreate, SubtaskCreate, FeedbackCreate, TaskListCreate, SubtaskUpdate
 from ai_service.db.prisma_models import User
 from passlib.context import CryptContext
 
@@ -14,7 +14,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 def get_user_by_email(db: Session, email: str) -> Optional[User]:
     return db.query(User).filter(User.email == email).first()
 
-def create_user(db: Session, user: schemas.UserCreateWithImage):
+def create_user(db: Session, user: UserCreateWithImage):
     db_user = prisma_models.User(
         name=user.name,
         email=user.email,
@@ -27,7 +27,7 @@ def create_user(db: Session, user: schemas.UserCreateWithImage):
     return db_user
 
 
-def update_user(db: Session, user_id: str, user: schemas.UserUpdateWithImage):
+def update_user(db: Session, user_id: str, user: UserUpdateWithImage):
     db_user = db.query(prisma_models.User).filter(prisma_models.User.id == user_id).first()
     if db_user:
         if user.name is not None:
@@ -102,7 +102,7 @@ def update_task_subtasks(db: Session, task_id: int, subtask_titles: List[str]):
     return task  # Return the task with updated subtasks
 
 # Dashboard CRUD operations
-def create_dashboard(db: Session, dashboard: schemas.DashboardCreate):
+def create_dashboard(db: Session, dashboard: DashboardCreate):
     db_dashboard = Dashboard(**dashboard.dict())
     db.add(db_dashboard)
     db.commit()
@@ -117,7 +117,7 @@ def delete_dashboard(db: Session, dashboard_id: int):
     db.delete(db_dashboard)
     db.commit()
 
-def update_dashboard(db: Session, dashboard_id: int, dashboard: schemas.DashboardCreate):
+def update_dashboard(db: Session, dashboard_id: int, dashboard: DashboardCreate):
     db_dashboard = db.query(Dashboard).filter(Dashboard.id == dashboard_id).first()
     if db_dashboard:
         for key, value in dashboard.dict().items():
@@ -135,7 +135,7 @@ def delete_user(db: Session, user_id: str):
     db.commit()
 
 # TaskList CRUD operations
-def create_tasklist(db: Session, tasklist: schemas.TaskListCreate):
+def create_tasklist(db: Session, tasklist: TaskListCreate):
     db_tasklist = TaskList(**tasklist.dict())
     db.add(db_tasklist)
     db.commit()
@@ -169,7 +169,7 @@ def delete_tasklist(db: Session, tasklist_id: int):
 
 
 
-def update_tasklist(db: Session, tasklist_id: int, tasklist: schemas.TaskListCreate):
+def update_tasklist(db: Session, tasklist_id: int, tasklist: TaskListCreate):
     db_tasklist = db.query(TaskList).filter(TaskList.id == tasklist_id).first()
     if db_tasklist:
         for key, value in tasklist.dict().items():
@@ -179,7 +179,7 @@ def update_tasklist(db: Session, tasklist_id: int, tasklist: schemas.TaskListCre
     return db_tasklist
 
 # Task CRUD operations
-def create_task(db: Session, task: schemas.TaskCreate):
+def create_task(db: Session, task: TaskCreate):
     db_task = Task(**task.dict())
     db.add(db_task)
     db.commit()
@@ -194,7 +194,7 @@ def delete_task(db: Session, task_id: int):
     db.delete(db_task)
     db.commit()
 
-def update_task(db: Session, task_id: int, task_data: schemas.TaskUpdate):
+def update_task(db: Session, task_id: int, task_data: TaskUpdate):
     db_task = db.query(Task).filter(Task.id == task_id).first()
     if not db_task:
         raise ValueError(f"No task found with ID {task_id}")
@@ -215,7 +215,7 @@ def update_task(db: Session, task_id: int, task_data: schemas.TaskUpdate):
 
 
 # Tag CRUD operations
-def create_tag(db: Session, tag: schemas.TagCreate):
+def create_tag(db: Session, tag: TagCreate):
     db_tag = Tag(**tag.dict())
     # check if tag already exists
     existing_tag = db.query(Tag).filter(Tag.name == tag.name).first()
@@ -252,7 +252,7 @@ def delete_tag(db: Session, tag_id: int):
     db.delete(db_tag)
     db.commit()
 
-def update_tag(db: Session, tag_id: int, tag: schemas.TagCreate):
+def update_tag(db: Session, tag_id: int, tag: TagCreate):
     db_tag = db.query(Tag).filter(Tag.id == tag_id).first()
     if db_tag:
         for key, value in tag.dict().items():
@@ -262,7 +262,7 @@ def update_tag(db: Session, tag_id: int, tag: schemas.TagCreate):
     return db_tag
 
 # Subtask CRUD operations
-def create_subtask(db: Session, subtask: schemas.SubtaskCreate):
+def create_subtask(db: Session, subtask: SubtaskCreate):
     db_subtask = Subtask(**subtask.dict())
     db.add(db_subtask)
     db.commit()
@@ -277,7 +277,7 @@ def delete_subtask(db: Session, subtask_id: int):
     db.delete(db_subtask)
     db.commit()
 
-def update_subtask(db: Session, subtask_id: int, subtask: schemas.SubtaskCreate):
+def update_subtask(db: Session, subtask_id: int, subtask: SubtaskCreate):
     db_subtask = db.query(Subtask).filter(Subtask.id == subtask_id).first()
     if db_subtask:
         for key, value in subtask.dict().items():
@@ -288,7 +288,7 @@ def update_subtask(db: Session, subtask_id: int, subtask: schemas.SubtaskCreate)
 
 
 # Feedback CRUD operations
-def create_feedback(db: Session, feedback: schemas.FeedbackCreate):
+def create_feedback(db: Session, feedback: FeedbackCreate):
     db_feedback = models.Feedback(**feedback.dict())
     db.add(db_feedback)
     db.commit()
@@ -307,14 +307,14 @@ def delete_task(db: Session, task_id: int):
     return db_task
 
 # Subtask CRUD operations
-def create_subtask(db: Session, subtask: schemas.SubtaskCreate):
+def create_subtask(db: Session, subtask: SubtaskCreate):
     db_subtask = Subtask(**subtask.dict())
     db.add(db_subtask)
     db.commit()
     db.refresh(db_subtask)
     return db_subtask
 
-def update_subtask(db: Session, subtask_id: int, subtask_update: schemas.SubtaskUpdate):
+def update_subtask(db: Session, subtask_id: int, subtask_update: SubtaskUpdate):
     db_subtask = db.query(Subtask).filter(Subtask.id == subtask_id).first()
     if db_subtask:
         for key, value in subtask_update.dict().items():
@@ -324,7 +324,7 @@ def update_subtask(db: Session, subtask_id: int, subtask_update: schemas.Subtask
     return db_subtask
 
 # Tag CRUD operations
-def create_tag(db: Session, tag: schemas.TagCreate):
+def create_tag(db: Session, tag: TagCreate):
     db_tag = Tag(**tag.dict())
     db.add(db_tag)
     db.commit()
@@ -338,7 +338,7 @@ def delete_tag(db: Session, tag_id: int):
         db.commit()
     return db_tag
 
-def search_tasks_with_user(db: Session, search_params: schemas.TaskSearchWithUser):
+def search_tasks_with_user(db: Session, search_params: TaskSearchWithUser):
     query = db.query(Task, TaskList, Dashboard) \
               .join(Task.taskList) \
               .join(TaskList.dashboard) \
