@@ -1,10 +1,11 @@
 from typing import List, Optional
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
-from ai_service import prisma_models
-from ai_service.prisma_models import Dashboard, Subtask, Task, Tag, TaskList
-from ai_service import schemas, models
-from ai_service.prisma_models import User
+from ai_service.db import prisma_models
+from ai_service.db import models
+from ai_service.db.prisma_models import Dashboard, Subtask, Task, Tag, TaskList
+from ai_service.db import schemas
+from ai_service.db.prisma_models import User
 from passlib.context import CryptContext
 
 
@@ -109,31 +110,6 @@ def delete_user(db: Session, user_id: str):
     db_user = db.query(User).filter(User.id == user_id).first()
     db.delete(db_user)
     db.commit()
-
-# Dashboard CRUD operations
-def create_dashboard(db: Session, dashboard: schemas.DashboardCreate):
-    db_dashboard = Dashboard(**dashboard.dict())
-    db.add(db_dashboard)
-    db.commit()
-    db.refresh(db_dashboard)
-    return db_dashboard
-
-def get_dashboard(db: Session, dashboard_id: int):
-    return db.query(Dashboard).filter(Dashboard.id == dashboard_id).first()
-
-def delete_dashboard(db: Session, dashboard_id: int):
-    db_dashboard = db.query(Dashboard).filter(Dashboard.id == dashboard_id).first()
-    db.delete(db_dashboard)
-    db.commit()
-
-def update_dashboard(db: Session, dashboard_id: int, dashboard: schemas.DashboardCreate):
-    db_dashboard = db.query(Dashboard).filter(Dashboard.id == dashboard_id).first()
-    if db_dashboard:
-        for key, value in dashboard.dict().items():
-            setattr(db_dashboard, key, value)
-        db.commit()
-        db.refresh(db_dashboard)
-    return db_dashboard
 
 # TaskList CRUD operations
 def create_tasklist(db: Session, tasklist: schemas.TaskListCreate):

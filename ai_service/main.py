@@ -7,18 +7,22 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
-from ai_service import ai_manager, schemas, prisma_crud, crud
-from ai_service.database import SessionLocalAI, SessionLocalPrisma
-from ai_service.subtasks import AutoSubtasking
-from ai_service.tagging import AutoTagging
-from ai_service.feedback import FeedbackManager
-from ai_service.models import Base as BaseAI
-from ai_service.prisma_models import Base as BasePrisma, Subtask, Tag, Task
+from ai_service.db import schemas
+from ai_service.api import ai_manager
+from ai_service.db import crud, prisma_crud
+from .db import crud, database, schemas
+from .api import auth
+from ai_service.db.database import SessionLocalAI, SessionLocalPrisma
+from ai_service.api.subtasks import AutoSubtasking
+from ai_service.api.tagging import AutoTagging
+from ai_service.api.feedback import FeedbackManager
+from ai_service.db.models import Base as BaseAI
+from ai_service.db.prisma_models import Base as BasePrisma, Subtask, Tag, Task
 from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordRequestForm
-from ai_service.database import get_db_ai, get_db_prisma
-from . import schemas, crud, auth, database, task_endpoints
+from ai_service.db.database import get_db_ai, get_db_prisma
+from .routes import task_endpoints
 from sqlalchemy import or_
 from sqlalchemy.orm import joinedload
 from fastapi.responses import StreamingResponse

@@ -1,6 +1,6 @@
 from sqlalchemy import Column, LargeBinary, String, Integer, Boolean, DateTime, Enum, ForeignKey, Table, func
 from sqlalchemy.orm import relationship
-from ai_service.database import BasePrisma as Base
+from ai_service.db.database import BasePrisma as Base
 import enum
 
 class TaskTypeEnum(str, enum.Enum):

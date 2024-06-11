@@ -2,7 +2,9 @@ from datetime import datetime
 import json
 from typing import List
 from sqlalchemy.orm import Session
-from . import models, schemas
+
+from . import models
+from . import schemas
 
 # CRUD for AITask
 def create_ai_task(db: Session, ai_task: schemas.AITaskCreate):

@@ -2,8 +2,9 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from ai_service import crud
-from . import prisma_crud, schemas, database
+from ai_service.db import crud
+from ..db import database, prisma_crud
+from ..db import schemas
 
 router = APIRouter()
 

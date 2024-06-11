@@ -1,6 +1,8 @@
 import chromadb
 from sqlalchemy.orm import Session
-from . import schemas, crud
+
+from ..db import crud
+from ..db import schemas
 
 client = chromadb.Client()
 collection = client.create_collection("user_knowledge")

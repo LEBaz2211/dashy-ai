@@ -2,7 +2,9 @@ import json
 from openai import OpenAI
 from sqlalchemy.orm import Session
 from datetime import datetime
-from . import crud, schemas
+
+from ..db import crud
+from ..db import schemas
 
 def query_llm(messages, model="llama3-70b-8192"):
     client = OpenAI(base_url="https://api.groq.com/openai/v1", api_key="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")

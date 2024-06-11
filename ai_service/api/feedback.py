@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
-from ai_service import schemas, crud
-from ai_service.models import AITask
+from ai_service.db import schemas
+from ai_service.db import crud
+from ai_service.db.models import AITask
 
 class FeedbackManager:
     def __init__(self, db: Session):

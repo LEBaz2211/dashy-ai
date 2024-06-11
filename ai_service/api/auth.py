@@ -1,16 +1,21 @@
 import logging
 from datetime import datetime, timedelta
+import os
 from typing import Optional
+from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException, status, APIRouter
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from . import prisma_crud, prisma_models, database
 
-# to get a string like this run: openssl rand -hex 32
-SECRET_KEY = "00053cb59d7f22d4e83d91741c0238a7b4a8f4ee36390f65970474338f034c01"
+from ..db import database, prisma_crud
+from ..db import prisma_models
+
+load_dotenv()
+
+SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
