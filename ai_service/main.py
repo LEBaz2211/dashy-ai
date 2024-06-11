@@ -11,6 +11,7 @@ from .routes.dashboard import router as dashboard_router
 from .routes.tasklist import router as tasklist_router
 from .routes.tag import router as tag_router
 from .routes.subtask import router as subtask_router
+from .routes.task import router as task_router
 
 app = FastAPI()
 
@@ -25,6 +26,7 @@ app.include_router(dashboard_router)
 app.include_router(tasklist_router)
 app.include_router(tag_router)
 app.include_router(subtask_router)
+app.include_router(task_router)
 
 app.add_middleware(
     CORSMiddleware,

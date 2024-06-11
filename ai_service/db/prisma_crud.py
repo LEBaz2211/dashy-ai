@@ -101,7 +101,30 @@ def update_task_subtasks(db: Session, task_id: int, subtask_titles: List[str]):
     db.commit()  # Commit changes to the database
     return task  # Return the task with updated subtasks
 
+# Dashboard CRUD operations
+def create_dashboard(db: Session, dashboard: schemas.DashboardCreate):
+    db_dashboard = Dashboard(**dashboard.dict())
+    db.add(db_dashboard)
+    db.commit()
+    db.refresh(db_dashboard)
+    return db_dashboard
 
+def get_dashboard(db: Session, dashboard_id: int):
+    return db.query(Dashboard).filter(Dashboard.id == dashboard_id).first()
+
+def delete_dashboard(db: Session, dashboard_id: int):
+    db_dashboard = db.query(Dashboard).filter(Dashboard.id == dashboard_id).first()
+    db.delete(db_dashboard)
+    db.commit()
+
+def update_dashboard(db: Session, dashboard_id: int, dashboard: schemas.DashboardCreate):
+    db_dashboard = db.query(Dashboard).filter(Dashboard.id == dashboard_id).first()
+    if db_dashboard:
+        for key, value in dashboard.dict().items():
+            setattr(db_dashboard, key, value)
+        db.commit()
+        db.refresh(db_dashboard)
+    return db_dashboard
 
 def get_user(db: Session, user_id: str):
     return db.query(User).filter(User.id == user_id).first()
