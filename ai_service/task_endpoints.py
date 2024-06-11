@@ -25,6 +25,9 @@ async def get_task(task_id: int, db: Session = Depends(database.get_db_prisma)):
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
     return task
+@router.post("/tasks", response_model=schemas.Task)
+async def create_task(task: schemas.TaskCreate, db: Session = Depends(database.get_db_prisma)):
+    return prisma_crud.create_task(db, task)
 
 @router.put("/tasks/{task_id}", response_model=schemas.Task)
 async def update_task(task_id: int, task_update: schemas.TaskUpdate, db: Session = Depends(database.get_db_prisma)):

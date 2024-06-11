@@ -115,9 +115,9 @@ class PersonalizedPrompt(PersonalizedPromptBase):
     class Config:
         orm_mode = True
 
-class Task(BaseModel):
-    id: int
-    title: str
+# class Task(BaseModel):
+#     id: int
+#     title: str
 
 class DashboardTestRequest(BaseModel):
     user_id: str
@@ -208,13 +208,14 @@ class TaskBase(BaseModel):
 class TaskCreate(TaskBase):
     pass
 
-class Task(TaskBase):
-    id: int
-    tags: List['Tag'] = []
-    subtasks: List['Subtask'] = []
+# class Task(TaskBase):
+#     id: int
+#     completed: int
+#     tags: List['Tag'] = []
+#     subtasks: List['Subtask'] = []
 
-    class Config:
-        orm_mode = True
+#     class Config:
+#         orm_mode = True
 
 class SubtaskBase(BaseModel):
     title: str
