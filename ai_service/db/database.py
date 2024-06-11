@@ -18,7 +18,7 @@ SessionLocalPrisma = sessionmaker(autocommit=False, autoflush=False, bind=engine
 BasePrisma = declarative_base()
 
 def init_ai_database():
-    from .models import BaseAI
+    from .ai_models import BaseAI
     BaseAI.metadata.create_all(bind=engine_ai)
 
 def get_db_ai():
